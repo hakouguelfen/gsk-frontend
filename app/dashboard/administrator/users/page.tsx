@@ -308,33 +308,6 @@ export default function UserManagement() {
             </form>
           </Card>
         </TabsContent>
-        
-        <TabsContent value="roles">
-          <Card>
-            <CardHeader>
-              <CardTitle>Roles & Permissions</CardTitle>
-              <CardDescription>
-                Manage roles and their associated permissions.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-6">
-                <div className="rounded-md border">
-                  <div className="bg-gray-100 p-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <UserCog className="h-5 w-5" />
-                        <h3 className="font-medium">Lab Analyst</h3>
-                      </div>
-                      <Button variant="outline" size="sm">Edit Role</Button>
-                    </div>
-                  </div>
-                  <div className="p-4">
-                    <div className="space-y-4">
-                      <div className="grid grid-cols-3 gap-4 rounded-md bg-gray-50 p-3">
-                        <div className="font-medium">Permission</div>
-                        <div className="font-medium">Description</div>
-                        <div className="font-medium">Status</div>
-                      </div>
-                      <div className="grid grid-cols-3 gap-4 rounded-md p-3">
-                        <div>Send Notifications</div>\
+      </Tabs>
+    </div>
+  )
