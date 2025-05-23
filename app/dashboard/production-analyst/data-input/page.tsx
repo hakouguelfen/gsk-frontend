@@ -3,160 +3,153 @@
 import type React from "react"
 
 import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { useRouter } from "next/navigation"
+import { useToast } from "@/components/ui/use-toast"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
-import { toast } from "@/components/ui/use-toast"
-import { useFirebase } from "@/lib/firebase/firebase-provider"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { addProductionData } from "@/lib/firebase/firestore"
 
-export default function ProductionDataInput() {
-  const { user } = useFirebase()
-  const [isLoading, setIsLoading] = useState(false)
+export default function DataInputPage() {
+  const router = useRouter()
+  const { toast } = useToast()
 
-  // Production data form state
+  // Form state variables
   const [product, setProduct] = useState("")
   const [batchNumber, setBatchNumber] = useState("")
   const [processStep, setProcessStep] = useState("")
   const [processDate, setProcessDate] = useState("")
-  const [mixingTime, setMixingTime] = useState("")
-  const [temperature, setTemperature] = useState("")
-  const [pressure, setPressure] = useState("")
+  const [activeIngredientQuantity, setActiveIngredientQuantity] = useState("")
+  const [excipientsQuantity, setExcipientsQuantity] = useState("")
+  // Add these new state variables after the existing ones
+  const [granulePorosity, setGranulePorosity] = useState("")
+  const [moistureContent, setMoistureContent] = useState("")
+  const [psdD10, setPsdD10] = useState("")
+  const [psdD50, setPsdD50] = useState("")
+  const [psdD90, setPsdD90] = useState("")
+  const [psdSpan, setPsdSpan] = useState("")
+  const [oosType, setOosType] = useState("")
   const [notes, setNotes] = useState("")
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault()
 
-    if (!user) {
-      toast({
-        title: "Authentication error",
-        description: "You must be logged in to submit data",
-        variant: "destructive",
-      })
-      return
+    // Create process parameters object
+    const processParameters = {
+      activeIngredientQuantity: activeIngredientQuantity ? Number.parseFloat(activeIngredientQuantity) : null,
+      excipientsQuantity: excipientsQuantity ? Number.parseFloat(excipientsQuantity) : null,
+      granulePorosity: granulePorosity ? Number.parseFloat(granulePorosity) : null,
+      moistureContent: moistureContent ? Number.parseFloat(moistureContent) : null,
+      psdD10: psdD10 ? Number.parseFloat(psdD10) : null,
+      psdD50: psdD50 ? Number.parseFloat(psdD50) : null,
+      psdD90: psdD90 ? Number.parseFloat(psdD90) : null,
+      psdSpan: psdSpan ? Number.parseFloat(psdSpan) : null,
     }
 
-    if (!product || !batchNumber || !processStep || !processDate || !mixingTime || !temperature) {
-      toast({
-        title: "Submission failed",
-        description: "Please fill in all required fields.",
-        variant: "destructive",
-      })
-      return
+    // Create oos parameters object
+    const oosParameters = {
+      oosType: oosType || null,
     }
 
-    setIsLoading(true)
+    // Create payload
+    const payload = {
+      product,
+      batchNumber,
+      processStep,
+      processDate,
+      processParameters,
+      oosParameters,
+      notes,
+    }
 
     try {
-      // Create process parameters object
-      const processParameters = {
-        mixingTime: Number.parseFloat(mixingTime),
-        temperature: Number.parseFloat(temperature),
-        pressure: pressure ? Number.parseFloat(pressure) : null,
-      }
-
-      // Add data to Firestore
-      await addProductionData({
-        productName: product,
-        batchNumber,
-        processStep,
-        processDate,
-        processParameters,
-        notes,
-        createdBy: user.uid,
-      })
+      await addProductionData(payload)
 
       toast({
-        title: "Production data submitted",
-        description: `Production data for ${product} (Batch: ${batchNumber}) has been submitted successfully.`,
+        title: "Data Submitted",
+        description: "Your lab data has been successfully submitted.",
       })
 
+    } catch (error) {
+      console.error("Error submitting data:", error)
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred.",
+        variant: "destructive",
+      })
+    } finally {
       // Reset form
       setProduct("")
       setBatchNumber("")
       setProcessStep("")
       setProcessDate("")
-      setMixingTime("")
-      setTemperature("")
-      setPressure("")
+      setActiveIngredientQuantity("")
+      setExcipientsQuantity("")
+      setGranulePorosity("")
+      setMoistureContent("")
+      setPsdD10("")
+      setPsdD50("")
+      setPsdD90("")
+      setPsdSpan("")
+      setOosType("")
       setNotes("")
-    } catch (error) {
-      console.error("Error submitting production data:", error)
-      toast({
-        title: "Submission failed",
-        description: "An error occurred while submitting the data. Please try again.",
-        variant: "destructive",
-      })
-    } finally {
-      setIsLoading(false)
+
+      router.refresh()
     }
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold tracking-tight">Production Data Input</h2>
-        <p className="text-muted-foreground">Enter production process data and parameters.</p>
-      </div>
-
-      <Tabs defaultValue="mixing" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="mixing">Mixing Process</TabsTrigger>
-          <TabsTrigger value="filling">Filling Process</TabsTrigger>
-          <TabsTrigger value="packaging">Packaging Process</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="mixing">
-          <Card>
-            <form onSubmit={handleSubmit}>
-              <CardHeader>
-                <CardTitle>Mixing Process Data</CardTitle>
-                <CardDescription>Enter mixing process parameters for pharmaceutical products.</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
+    <div className="container mx-auto py-10">
+      <Card>
+        <CardHeader>
+          <CardTitle>Data Input</CardTitle>
+          <CardDescription>Enter production data for analysis.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Tabs defaultValue="general" className="space-y-4">
+            <TabsList>
+              <TabsTrigger value="general">General Information</TabsTrigger>
+              <TabsTrigger value="process">Process Parameters</TabsTrigger>
+              <TabsTrigger value="oos">OOS Parameters</TabsTrigger>
+              <TabsTrigger value="notes">Notes</TabsTrigger>
+            </TabsList>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {/* General informations */}
+              <TabsContent value="general" className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="product">Product</Label>
-                    <Select value={product} onValueChange={setProduct} required>
-                      <SelectTrigger id="product">
-                        <SelectValue placeholder="Select product" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="augmentin-60ml">Augmentin 60ml</SelectItem>
-                        <SelectItem value="augmentin-1g">Augmentin 1g</SelectItem>
-                        <SelectItem value="augmentin-500mg">Augmentin 500mg</SelectItem>
-                        <SelectItem value="clamoxyl-500mg">Clamoxyl 500mg</SelectItem>
-                        <SelectItem value="clamoxyl-250mg">Clamoxyl 250mg</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <Input
+                      id="product"
+                      placeholder="Product Name"
+                      value={product}
+                      onChange={(e) => setProduct(e.target.value)}
+                      required
+                    />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="process-step">Process Step</Label>
-                    <Select value={processStep} onValueChange={setProcessStep} required>
-                      <SelectTrigger id="process-step">
-                        <SelectValue placeholder="Select process step" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="initial-mixing">Initial Mixing</SelectItem>
-                        <SelectItem value="homogenization">Homogenization</SelectItem>
-                        <SelectItem value="final-mixing">Final Mixing</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="batch-number">Batch Number</Label>
                     <Input
                       id="batch-number"
-                      placeholder="e.g., A2023-45"
+                      placeholder="Batch Number"
                       value={batchNumber}
                       onChange={(e) => setBatchNumber(e.target.value)}
+                      required
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="process-step">Process Step</Label>
+                    <Input
+                      id="process-step"
+                      placeholder="Process Step"
+                      value={processStep}
+                      onChange={(e) => setProcessStep(e.target.value)}
                       required
                     />
                   </div>
@@ -171,89 +164,144 @@ export default function ProductionDataInput() {
                     />
                   </div>
                 </div>
+              </TabsContent>
 
-                <div className="space-y-2">
-                  <Label htmlFor="mixing-time">Mixing Time (minutes)</Label>
-                  <Input
-                    id="mixing-time"
-                    type="number"
-                    placeholder="e.g., 30"
-                    value={mixingTime}
-                    onChange={(e) => setMixingTime(e.target.value)}
-                    required
-                  />
+              {/* Process Parameters Tab */}
+              <TabsContent value="process" className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="active-ingredient-quantity">Quantité principes actifs (mg)</Label>
+                    <Input
+                      id="active-ingredient-quantity"
+                      type="number"
+                      step="0.001"
+                      placeholder="e.g., 500"
+                      value={activeIngredientQuantity}
+                      onChange={(e) => setActiveIngredientQuantity(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="excipients-quantity">Quantité excipients (mg)</Label>
+                    <Input
+                      id="excipients-quantity"
+                      type="number"
+                      step="0.001"
+                      placeholder="e.g., 100"
+                      value={excipientsQuantity}
+                      onChange={(e) => setExcipientsQuantity(e.target.value)}
+                    />
+                  </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="temperature">Temperature (°C)</Label>
-                  <Input
-                    id="temperature"
-                    type="number"
-                    placeholder="e.g., 25.5"
-                    value={temperature}
-                    onChange={(e) => setTemperature(e.target.value)}
-                    required
-                  />
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="granule-porosity">Porosité des granules (%)</Label>
+                    <Input
+                      id="granule-porosity"
+                      type="number"
+                      step="0.01"
+                      placeholder="e.g., 35.5"
+                      value={granulePorosity}
+                      onChange={(e) => setGranulePorosity(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="moisture-content">Teneur en Humidité (%)</Label>
+                    <Input
+                      id="moisture-content"
+                      type="number"
+                      step="0.01"
+                      placeholder="e.g., 2.5"
+                      value={moistureContent}
+                      onChange={(e) => setMoistureContent(e.target.value)}
+                    />
+                  </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="pressure">Pressure (bar)</Label>
-                  <Input
-                    id="pressure"
-                    type="number"
-                    placeholder="e.g., 1.2"
-                    value={pressure}
-                    onChange={(e) => setPressure(e.target.value)}
-                  />
+                <div className="grid grid-cols-4 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="psd-d10">PSD_D10 (µm)</Label>
+                    <Input
+                      id="psd-d10"
+                      type="number"
+                      step="0.1"
+                      placeholder="e.g., 10.5"
+                      value={psdD10}
+                      onChange={(e) => setPsdD10(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="psd-d50">PSD_D50 (µm)</Label>
+                    <Input
+                      id="psd-d50"
+                      type="number"
+                      step="0.1"
+                      placeholder="e.g., 50.2"
+                      value={psdD50}
+                      onChange={(e) => setPsdD50(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="psd-d90">PSD_D90 (µm)</Label>
+                    <Input
+                      id="psd-d90"
+                      type="number"
+                      step="0.1"
+                      placeholder="e.g., 90.7"
+                      value={psdD90}
+                      onChange={(e) => setPsdD90(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="psd-span">PSD_Span</Label>
+                    <Input
+                      id="psd-span"
+                      type="number"
+                      step="0.01"
+                      placeholder="e.g., 1.6"
+                      value={psdSpan}
+                      onChange={(e) => setPsdSpan(e.target.value)}
+                    />
+                  </div>
                 </div>
+              </TabsContent>
 
+              {/* OOS params */}
+              <TabsContent value="oos" className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="oos-type">OOS Type</Label>
+                    <Select onValueChange={setOosType}>
+                      <SelectTrigger className="w-[180px]">
+                        <SelectValue placeholder="Select OOS Type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="oos">OOS</SelectItem>
+                        <SelectItem value="oot">OOT</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </TabsContent>
+
+              {/* Notes */}
+              <TabsContent value="notes" className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="notes">Notes</Label>
                   <Textarea
                     id="notes"
-                    placeholder="Enter any additional observations or notes"
+                    placeholder="Additional notes or observations"
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
                   />
                 </div>
-              </CardContent>
-              <CardFooter>
-                <Button type="submit" className="bg-primary-500 hover:bg-primary-600" disabled={isLoading}>
-                  {isLoading ? "Submitting..." : "Submit Production Data"}
-                </Button>
-              </CardFooter>
+              </TabsContent>
+
+              <Button type="submit">Submit Data</Button>
             </form>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="filling">
-          <Card>
-            <CardHeader>
-              <CardTitle>Filling Process Data</CardTitle>
-              <CardDescription>Enter filling process parameters for pharmaceutical products.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-center h-40 bg-gray-50 rounded-md">
-                <p className="text-muted-foreground">Filling process form will be implemented here</p>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="packaging">
-          <Card>
-            <CardHeader>
-              <CardTitle>Packaging Process Data</CardTitle>
-              <CardDescription>Enter packaging process parameters for pharmaceutical products.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-center h-40 bg-gray-50 rounded-md">
-                <p className="text-muted-foreground">Packaging process form will be implemented here</p>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+          </Tabs>
+        </CardContent>
+      </Card>
     </div>
   )
 }

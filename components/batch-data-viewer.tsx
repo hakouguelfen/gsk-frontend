@@ -13,8 +13,25 @@ interface BatchDataViewerProps {
   batchNumber: string
 }
 
+const predictRootCause = async (batchNumber: any) => {
+  try {
+    const response = await fetch(`http://localhost:3000/${batchNumber}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    const data = await response.text()
+
+    return { result: data }
+  } catch (error) {
+    throw error
+  }
+}
+
 export function BatchDataViewer({ batchNumber }: BatchDataViewerProps) {
   const [data, setData] = useState<any>(null)
+  const [rootCause, setRootCause] = useState<string>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -23,7 +40,11 @@ export function BatchDataViewer({ batchNumber }: BatchDataViewerProps) {
       setLoading(true)
       setError(null)
       const batchData = await getCombinedBatchData(batchNumber)
+      const rootCauseData = await predictRootCause(batchNumber)
+      setRootCause(rootCauseData["result"])
       setData(batchData)
+
+      console.log(batchData)
     } catch (err) {
       console.error("Error fetching batch data:", err)
       setError("Failed to load batch data. Please try again later.")
@@ -203,41 +224,16 @@ export function BatchDataViewer({ batchNumber }: BatchDataViewerProps) {
                 <Card>
                   <CardHeader className="pb-2">
                     <CardTitle className="text-sm">Analysis</CardTitle>
-                    <CardDescription>Potential quality issues based on combined data</CardDescription>
+                    <CardDescription>Based on the combined laboratory and production data, 
+                        the following potential issues have been identified as:
+                      </CardDescription>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-2">
-                      {/* This would be where AI analysis would go in a real system */}
-                      <p className="text-sm">
-                        Based on the combined laboratory and production data, the following potential issues have been
-                        identified:
-                      </p>
                       <ul className="list-disc pl-5 text-sm space-y-1">
-                        {data.labData[0]?.testResults?.impurities > 0.5 && (
                           <li className="text-red-600">
-                            High impurity level ({data.labData[0]?.testResults.impurities}%) exceeds the acceptable
-                            limit of 0.5%
+                            {rootCause}
                           </li>
-                        )}
-                        {data.productionData[0]?.processParameters?.temperature > 30 && (
-                          <li className="text-orange-600">
-                            Processing temperature ({data.productionData[0]?.processParameters.temperature}°C) is above
-                            the recommended range
-                          </li>
-                        )}
-                        {data.labData[0]?.testResults?.clavulanicAcid < 95 && (
-                          <li className="text-red-600">
-                            Clavulanic acid content ({data.labData[0]?.testResults.clavulanicAcid}%) is below the
-                            acceptable limit of 95%
-                          </li>
-                        )}
-                        {!data.labData[0]?.testResults?.impurities > 0.5 &&
-                          !data.productionData[0]?.processParameters?.temperature > 30 &&
-                          !data.labData[0]?.testResults?.clavulanicAcid < 95 && (
-                            <li className="text-green-600">
-                              No significant issues detected. All parameters are within acceptable ranges.
-                            </li>
-                          )}
                       </ul>
                     </div>
                   </CardContent>

@@ -42,7 +42,6 @@ export interface LabData {
   batchNumber: string
   testType: string
   testDate: string
-  testResults: Record<string, any>
   notes?: string
   createdBy: string
   createdAt: Timestamp
@@ -267,7 +266,7 @@ export const getLabDataByBatch = async (batchNumber: string) => {
 }
 
 // Production Data Functions
-export const addProductionData = async (data: Omit<ProductionData, "id" | "createdAt">) => {
+export const addProductionData = async (data: any) => {
   try {
     const db = getFirestoreInstance()
     const docRef = await addDoc(collection(db, "productionData"), {
@@ -399,15 +398,10 @@ export const getCombinedBatchData = async (batchNumber: string) => {
       }
     }
 
-    // If no real data is available, import and use mock data
-    const { getMockBatchData } = await import("./mock-batch-data")
-    return getMockBatchData(batchNumber)
+    return null
   } catch (error) {
     console.error("Error getting combined batch data:", error)
-
-    // If there's an error, import and use mock data
-    const { getMockBatchData } = await import("./mock-batch-data")
-    return getMockBatchData(batchNumber)
+    return null
   }
 }
 
