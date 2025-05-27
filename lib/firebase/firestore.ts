@@ -24,7 +24,7 @@ import { getMockNotifications, getMockCAPAs } from "./mock-data"
 // Create a function to get the Firestore instance
 let firestoreInstance: Firestore | null = null
 
-const getFirestoreInstance = (): Firestore => {
+export const getFirestoreInstance = (): Firestore => {
   if (firestoreInstance) {
     return firestoreInstance
   }
@@ -33,6 +33,27 @@ const getFirestoreInstance = (): Firestore => {
   const app = !getApps().length ? initializeApp(firebaseConfig) : getApp()
   firestoreInstance = getFirestore(app)
   return firestoreInstance
+}
+
+// Feedback Types for Model Improvement
+export interface ModelFeedback {
+  id?: string
+  batchNumber: string
+  productName: string
+  originalPrediction: {
+    rootCause: string
+    confidence: number
+    evidence: string[]
+    capaActions: string[]
+  }
+  userFeedback: {
+    isCorrect: boolean
+    actualRootCause?: string
+    actualCapaActions?: string[]
+    comments?: string
+  }
+  managerId: string
+  createdAt: Timestamp
 }
 
 // Lab Data Types
@@ -137,6 +158,31 @@ export const ROLE_PERMISSIONS = {
     "users:write",
     "statistics:read",
   ],
+}
+// Model Feedback Functions
+export const submitModelFeedback = async (data: Omit<ModelFeedback, "id" | "createdAt">) => {
+  try {
+    const db = getFirestoreInstance()
+    const docRef = await addDoc(collection(db, "modelFeedback"), {
+      ...data,
+      createdAt: serverTimestamp(),
+    })
+    return docRef.id
+  } catch (error) {
+    console.error("Error submitting model feedback:", error)
+    throw error
+  }
+}
+export const getModelFeedback = async (batchNumber: string) => {
+  try {
+    const db = getFirestoreInstance()
+    const q = query(collection(db, "modelFeedback"), where("batchNumber", "==", batchNumber))
+    const querySnapshot = await getDocs(q)
+    return querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }) as ModelFeedback)
+  } catch (error) {
+    console.error("Error getting model feedback:", error)
+    return []
+  }
 }
 
 // Lab Data Functions
