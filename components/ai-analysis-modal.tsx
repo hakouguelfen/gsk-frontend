@@ -207,21 +207,21 @@ export function AIAnalysisModal({
 
           {/* Evidence */}
           <div className="space-y-2">
-            <Label className="flex items-center gap-2">
-              <FileText className="h-4 w-4" />
-              Supporting Evidence
-            </Label>
-            <ul className="space-y-2">
-              {prediction.evidence.map((evidence, index) => (
-                <li key={index} className="flex items-start gap-2 text-sm p-2 bg-green-50 rounded">
-                  <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
-                  {evidence}
-                </li>
-              ))}
-            </ul>
+              <Label className="flex items-center gap-2">
+                  <FileText className="h-4 w-4" />
+                  Supporting Evidence
+              </Label>
+              <ul className="space-y-2">
+                  {prediction.evidence.map((evidence, index) => (
+                      <li key={index} className="flex items-start gap-2 text-sm p-2 bg-green-50 rounded">
+                          <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+                          {evidence}
+                      </li>
+                  ))}
+              </ul>
           </div>
 
-          {/* CAPA Actions */}
+                  {/* CAPA Actions */}
           <div className="space-y-2">
             <Label className="flex items-center gap-2">
               <AlertTriangle className="h-4 w-4" />

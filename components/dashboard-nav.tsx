@@ -14,6 +14,7 @@ import {
   Home,
   LogOut,
   ShieldCheck,
+  Factory,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useFirebase } from "@/lib/firebase/firebase-provider"
@@ -59,6 +60,7 @@ export function DashboardNav() {
 
   const managerLinks = [
     { href: "/dashboard/manager", label: "Dashboard", icon: Home },
+    { href: "/dashboard/manager/fabrication", label: "Fabrication", icon: Factory },
     { href: "/dashboard/manager/notifications", label: "Notifications", icon: Bell },
     { href: "/dashboard/manager/root-cause", label: "Root Cause Analysis", icon: Search },
     { href: "/dashboard/manager/capa", label: "CAPA Prediction", icon: FileText },

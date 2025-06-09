@@ -92,7 +92,7 @@ export interface Notification {
   read: boolean
   createdAt: Timestamp
   relatedData?: {
-    type: "lab" | "production" | "combined"
+    type: "lab" | "production" | "combined" | "fabrication"
     labDataId?: string
     productionDataId?: string
     batchNumber?: string
@@ -159,6 +159,77 @@ export const ROLE_PERMISSIONS = {
     "statistics:read",
   ],
 }
+
+export async function saveLabAnalysisData(data: any) {
+  try {
+    const db = getFirestore()
+    const fabricationDataRef = collection(db, "labAnalysisData")
+
+    const docRef = await addDoc(fabricationDataRef, {
+      ...data,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    })
+
+    // Update the fabrication process to mark as fabricated
+    const fabricationProcessRef = doc(db, "fabricationProcesses", data.processId)
+    await updateDoc(fabricationProcessRef, {
+      isAnalyzed: true,
+      updatedAt: new Date().toISOString(),
+    })
+
+    return docRef.id
+  } catch (error) {
+    console.error("Error saving fabrication data:", error)
+    throw error
+  }
+}
+
+export async function saveFabricationData(data: any) {
+  try {
+    const db = getFirestore()
+    const fabricationDataRef = collection(db, "fabricationData")
+
+    const docRef = await addDoc(fabricationDataRef, {
+      ...data,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    })
+
+    // Update the fabrication process to mark as fabricated
+    const fabricationProcessRef = doc(db, "fabricationProcesses", data.processId)
+    await updateDoc(fabricationProcessRef, {
+      isFabricated: true,
+      updatedAt: new Date().toISOString(),
+    })
+
+    return docRef.id
+  } catch (error) {
+    console.error("Error saving fabrication data:", error)
+    throw error
+  }
+}
+
+export async function getFabricationProcesses() {
+  try {
+    const db = getFirestore()
+    const fabricationRef = collection(db, "fabricationProcesses")
+
+    // TODO: maybe use this instead
+    // const q = query(fabricationRef, where("isFabricated", "==", false), orderBy("dateTime", "desc"))
+    const q = query(fabricationRef, orderBy("dateTime", "desc"))
+    const querySnapshot = await getDocs(q)
+
+    return querySnapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }))
+  } catch (error) {
+    console.error("Error fetching fabrication processes:", error)
+    throw error
+  }
+}
+
 // Model Feedback Functions
 export const submitModelFeedback = async (data: Omit<ModelFeedback, "id" | "createdAt">) => {
   try {
@@ -284,14 +355,14 @@ export const getLabDataByBatch = async (batchNumber: string) => {
 
     try {
       // First attempt with ordering (requires index)
-      const q = query(collection(db, "labData"), where("batchNumber", "==", batchNumber), orderBy("createdAt", "desc"))
+      const q = query(collection(db, "labAnalysisData"), where("batchNumber", "==", batchNumber), orderBy("createdAt", "desc"))
       const querySnapshot = await getDocs(q)
       labData = querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }) as LabData)
     } catch (indexError) {
       console.log("Index error in getLabDataByBatch, falling back to simple query:", indexError)
 
       // Fallback to a simple query without ordering
-      const q = query(collection(db, "labData"), where("batchNumber", "==", batchNumber))
+      const q = query(collection(db, "labAnalysisData"), where("batchNumber", "==", batchNumber))
       const querySnapshot = await getDocs(q)
       labData = querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }) as LabData)
 
@@ -399,7 +470,7 @@ export const getProductionDataByBatch = async (batchNumber: string) => {
     try {
       // First attempt with ordering (requires index)
       const q = query(
-        collection(db, "productionData"),
+        collection(db, "fabricationData"),
         where("batchNumber", "==", batchNumber),
         orderBy("createdAt", "desc"),
       )
@@ -409,7 +480,7 @@ export const getProductionDataByBatch = async (batchNumber: string) => {
       console.log("Index error in getProductionDataByBatch, falling back to simple query:", indexError)
 
       // Fallback to a simple query without ordering
-      const q = query(collection(db, "productionData"), where("batchNumber", "==", batchNumber))
+      const q = query(collection(db, "fabricationData"), where("batchNumber", "==", batchNumber))
       const querySnapshot = await getDocs(q)
       productionData = querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }) as ProductionData)
 

@@ -2,6 +2,14 @@ import { PredictionResult } from "@/components/ai-analysis-modal";
 import { getFirestoreInstance } from "@/lib/firebase/firestore";
 import { collection, getDocs, query } from "firebase/firestore";
 
+const extract_evidence = (outOfRangeValues: Record<string, any>): Array<string> => {
+  const result = Object.entries(outOfRangeValues).map(([key, obj]) =>
+      `${key} is ${obj.value}: [${obj.status}]`
+  );
+
+  return result;
+}
+
 export const predictRootCause = async (batchNumber: any) => {
   try {
     const response = await fetch(`http://localhost:3000/${batchNumber}`, {
@@ -10,19 +18,14 @@ export const predictRootCause = async (batchNumber: any) => {
         'Content-Type': 'application/json',
       },
     });
-    const prediction = await response.text()
+    const prediction = await response.json()
 
     return {
       batchNumber: batchNumber,
       product: null,
-      rootCause: prediction,
-      confidence: 0.92,
-      evidence: [
-        "HPLC retention times showed systematic drift over the analysis period",
-        "System suitability parameters were at the edge of acceptance criteria",
-        "Previous batches analyzed on the same system showed similar trends",
-        "Equipment maintenance logs indicate overdue calibration",
-      ],
+      rootCause: prediction["root cause"],
+      confidence: prediction["accuracy"],
+      evidence: extract_evidence(prediction["out_of_range"]),
       similarCases: [
         "CAPA-2023-089: HPLC calibration issue in Quality Control lab",
         "CAPA-2022-156: Analytical equipment drift in production testing",

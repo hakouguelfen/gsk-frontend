@@ -21,13 +21,14 @@ import { savePrediction } from "./server"
 // Product image mapping
 const getProductImage = (productName: string) => {
   const productImages: Record<string, string> = {
-    "Augmentin 1g": "/images/augmentin1g.png",
     "Augmentin 30 ml PPSB pour nourrissant": "/images/augmentin30ml.png",
-    "Augmentin 500mg": "/images/augmentin500mg.png",
-    "Augmentin 60ml": "/images/augmentin60ml.png",
-    "clamoxyl1g": "/images/clamoxyl1g.png",
-    "clamoxyl250g": "/images/clamoxyl250mg.png",
-    "clamoxyl500g": "/images/clamoxyl500mg.png",
+    "Augmentin 60ml PPSB pour enfant": "/images/augmentin60ml.png",
+    "Augmentin 500mg sachet pour enfant": "/images/augmentin500mg.png",
+    "Augmentin 1g sachet pour adulte": "/images/augmentin1g.png",
+    "Augmentin 1g Comprimé": "/images/augmentin_comprime.png",
+    "Clamoxyl 250 mg PPSB": "/images/clamoxyl250mg.png",
+    "Clamoxyl 500 mg PPSB": "/images/clamoxyl500mg.png",
+    "Clamoxyl 1g Comprimé": "/images/clamoxyl1g.png",
   }
 
   return productImages[productName] || "/placeholder.svg?height=120&width=120"
@@ -77,7 +78,7 @@ function RootCauseAnalysisContent() {
       setIsSearching(false)
 
       // Auto-fill product name if available
-      let detectedProduct = data.labData[0]["productDetails"]["controlledProduct"]
+      let detectedProduct = data.labData[0]["product"]
       setProduct(detectedProduct)
 
       // Load existing feedback for this batch
