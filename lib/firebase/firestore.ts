@@ -20,6 +20,7 @@ import { firebaseConfig } from "./firebase-config"
 
 // Add this import at the top
 import { getMockNotifications, getMockCAPAs } from "./mock-data"
+import { FabricationProcess } from "@/app/dashboard/manager/fabrication/server"
 
 // Create a function to get the Firestore instance
 let firestoreInstance: Firestore | null = null
@@ -160,56 +161,6 @@ export const ROLE_PERMISSIONS = {
   ],
 }
 
-export async function saveLabAnalysisData(data: any) {
-  try {
-    const db = getFirestore()
-    const fabricationDataRef = collection(db, "labAnalysisData")
-
-    const docRef = await addDoc(fabricationDataRef, {
-      ...data,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    })
-
-    // Update the fabrication process to mark as fabricated
-    const fabricationProcessRef = doc(db, "fabricationProcesses", data.processId)
-    await updateDoc(fabricationProcessRef, {
-      isAnalyzed: true,
-      updatedAt: new Date().toISOString(),
-    })
-
-    return docRef.id
-  } catch (error) {
-    console.error("Error saving fabrication data:", error)
-    throw error
-  }
-}
-
-export async function saveFabricationData(data: any) {
-  try {
-    const db = getFirestore()
-    const fabricationDataRef = collection(db, "fabricationData")
-
-    const docRef = await addDoc(fabricationDataRef, {
-      ...data,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    })
-
-    // Update the fabrication process to mark as fabricated
-    const fabricationProcessRef = doc(db, "fabricationProcesses", data.processId)
-    await updateDoc(fabricationProcessRef, {
-      isFabricated: true,
-      updatedAt: new Date().toISOString(),
-    })
-
-    return docRef.id
-  } catch (error) {
-    console.error("Error saving fabrication data:", error)
-    throw error
-  }
-}
-
 export async function getFabricationProcesses() {
   try {
     const db = getFirestore()
@@ -347,107 +298,10 @@ export const getLabData = async (id: string) => {
   }
 }
 
-// Updated to handle missing index
-export const getLabDataByBatch = async (batchNumber: string) => {
-  try {
-    const db = getFirestoreInstance()
-    let labData = []
-
-    try {
-      // First attempt with ordering (requires index)
-      const q = query(collection(db, "labAnalysisData"), where("batchNumber", "==", batchNumber), orderBy("createdAt", "desc"))
-      const querySnapshot = await getDocs(q)
-      labData = querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }) as LabData)
-    } catch (indexError) {
-      console.log("Index error in getLabDataByBatch, falling back to simple query:", indexError)
-
-      // Fallback to a simple query without ordering
-      const q = query(collection(db, "labAnalysisData"), where("batchNumber", "==", batchNumber))
-      const querySnapshot = await getDocs(q)
-      labData = querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }) as LabData)
-
-      // Sort client-side by createdAt in descending order
-      labData.sort((a, b) => {
-        const dateA = a.createdAt?.toMillis() || 0
-        const dateB = b.createdAt?.toMillis() || 0
-        return dateB - dateA
-      })
-    }
-
-    return labData
-  } catch (error) {
-    console.error("Error getting lab data by batch:", error)
-    // Return empty array instead of throwing
-    return []
-  }
-}
-
-// Production Data Functions
-export const addProductionData = async (data: any) => {
-  try {
-    const db = getFirestoreInstance()
-    const docRef = await addDoc(collection(db, "productionData"), {
-      ...data,
-      createdAt: serverTimestamp(),
-    })
-
-    // Check if there's already lab data for this batch
-    const labDataSnapshot = await getDocs(
-      query(collection(db, "labData"), where("batchNumber", "==", data.batchNumber), limit(1)),
-    )
-
-    // Get all managers to notify them
-    const managersSnapshot = await getDocs(
-      query(collection(db, "users"), where("role", "==", ROLES.MANAGER), where("status", "==", "active")),
-    )
-
-    const managers = managersSnapshot.docs.map((doc) => doc.id)
-
-    // If we have lab data for this batch, send a combined notification to managers
-    if (!labDataSnapshot.empty && managers.length > 0) {
-      const labData = labDataSnapshot.docs[0].data() as LabData
-      const labDataId = labDataSnapshot.docs[0].id
-
-      await sendNotification({
-        subject: `Complete Data Available for ${data.productName} (Batch: ${data.batchNumber})`,
-        message: `Both laboratory and production data are now available for ${data.productName} (Batch: ${data.batchNumber}). You can now perform root cause analysis if needed.`,
-        priority: "high",
-        sender: "Quality System",
-        recipients: managers,
-        relatedData: {
-          type: "combined",
-          labDataId: labDataId,
-          productionDataId: docRef.id,
-          batchNumber: data.batchNumber,
-        },
-      })
-    } else if (managers.length > 0) {
-      // If no lab data yet, just notify managers about the production data
-      await sendNotification({
-        subject: `New Production Data for ${data.productName} (Batch: ${data.batchNumber})`,
-        message: `New production process data has been submitted for ${data.productName} (Batch: ${data.batchNumber}).`,
-        priority: "medium",
-        sender: "Production System",
-        recipients: managers,
-        relatedData: {
-          type: "production",
-          productionDataId: docRef.id,
-          batchNumber: data.batchNumber,
-        },
-      })
-    }
-
-    return docRef.id
-  } catch (error) {
-    console.error("Error adding production data:", error)
-    throw error
-  }
-}
-
 export const getProductionData = async (id: string) => {
   try {
     const db = getFirestoreInstance()
-    const docRef = doc(db, "productionData", id)
+    const docRef = doc(db, "fabricationData", id)
     const docSnap = await getDoc(docRef)
 
     if (docSnap.exists()) {
@@ -461,61 +315,23 @@ export const getProductionData = async (id: string) => {
   }
 }
 
-// Updated to handle missing index
-export const getProductionDataByBatch = async (batchNumber: string) => {
+// Get combined data for a batch (both lab and production)
+export const findFabricationProcess = async (batchNumber: string):Promise<FabricationProcess|null> => {
   try {
     const db = getFirestoreInstance()
-    let productionData = []
+    const querySnapshot = await getDocs(
+      query(collection(db, "fabricationProcesses"), where("batchNumber", "==", batchNumber), limit(1)),
+    )
 
-    try {
-      // First attempt with ordering (requires index)
-      const q = query(
-        collection(db, "fabricationData"),
-        where("batchNumber", "==", batchNumber),
-        orderBy("createdAt", "desc"),
-      )
-      const querySnapshot = await getDocs(q)
-      productionData = querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }) as ProductionData)
-    } catch (indexError) {
-      console.log("Index error in getProductionDataByBatch, falling back to simple query:", indexError)
-
-      // Fallback to a simple query without ordering
-      const q = query(collection(db, "fabricationData"), where("batchNumber", "==", batchNumber))
-      const querySnapshot = await getDocs(q)
-      productionData = querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }) as ProductionData)
-
-      // Sort client-side by createdAt in descending order
-      productionData.sort((a, b) => {
-        const dateA = a.createdAt?.toMillis() || 0
-        const dateB = b.createdAt?.toMillis() || 0
-        return dateB - dateA
-      })
+    if (querySnapshot.empty) {
+      return null
     }
 
-    return productionData
-  } catch (error) {
-    console.error("Error getting production data by batch:", error)
-    // Return empty array instead of throwing
-    return []
-  }
-}
-
-// Get combined data for a batch (both lab and production)
-export const getCombinedBatchData = async (batchNumber: string) => {
-  try {
-    const labData = await getLabDataByBatch(batchNumber)
-    const productionData = await getProductionDataByBatch(batchNumber)
-
-    // If we have real data, return it
-    if (labData.length > 0 || productionData.length > 0) {
-      return {
-        batchNumber,
-        labData,
-        productionData,
-      }
-    }
-
-    return null
+    const doc = querySnapshot.docs[0]
+    return {
+      id: doc.id,
+      ...doc.data(),
+    }as FabricationProcess
   } catch (error) {
     console.error("Error getting combined batch data:", error)
     return null

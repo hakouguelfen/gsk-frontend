@@ -11,12 +11,30 @@ import { ScatterChart } from "@/components/charts/scatter-chart"
 import { ChartErrorBoundary } from "@/components/charts/chart-error-boundary"
 import { formatNumber, safeAverage, validateNumber } from "@/lib/utils/data-validation"
 
+interface LabAnalystStatsDashboardProps {
+  data: any[]
+}
 interface LabAnalystMetrics {
     "avgerage retention time": any,
     "avgerage rsd": any,
     "avgerage hplc pressure": any,
     "avgerage symmetry factor": any,
 }
+type EquipmentPerformance = {
+  equipmentId: string;
+  incidents: number;
+  avgAge: string;
+  avgPressure: string;
+  avgRSD: string;
+  riskLevel: "low" | "medium" | "high";
+}[];
+type ControlCharts = {
+  labels: string[];
+  pressures: number[];
+  centerLine: number[];
+  ucl: number[];
+  lcl: number[];
+};
 
 export const findAverageLabData = async ():Promise<LabAnalystMetrics> => {
   try {
@@ -33,119 +51,58 @@ export const findAverageLabData = async ():Promise<LabAnalystMetrics> => {
   }
 }
 
-export const loadDataSet = async ():Promise<any> => {
+export const loadHplcPerformance = async ():Promise<EquipmentPerformance> => {
   try {
-    const response = await fetch(`http://localhost:3000/dataset`, {
+    const response = await fetch(`http://localhost:3000/lab/hplc_performance`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
       },
     });
-    const dataset = await response.json()
-    return dataset;
+    const data = await response.json()
+    return data;
   } catch (error) {
     throw error
   }
 }
 
-interface LabAnalystStatsDashboardProps {
-  data: any[]
+export const loadControlCharts = async ():Promise<ControlCharts> => {
+  try {
+    const response = await fetch(`http://localhost:3000/lab/control_chart`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    const data = await response.json()
+    return data;
+  } catch (error) {
+    throw error
+  }
 }
 
 export function LabAnalystStatsDashboard({ data }: LabAnalystStatsDashboardProps) {
-  const [selectedEquipment, setSelectedEquipment] = useState("all")
-  const [selectedTest, setSelectedTest] = useState("all")
   const [metrics, setMetrics] = useState<LabAnalystMetrics>()
-  const [dataset, setDataSet] = useState<any[]>()
+  const [hplcPerformance, setHplcPerformance] = useState<EquipmentPerformance>([])
+  const [controlCharts, setControlCharts] = useState<ControlCharts>({
+        labels: [],
+        pressures: [],
+        centerLine: [],
+        ucl: [],
+        lcl: []
+  })
 
   useEffect(() => {
       const fetchData = async () => {
         const averageData:LabAnalystMetrics = await findAverageLabData();
         setMetrics(averageData);
-        const datasets = await loadDataSet();
-        console.log(datasets);
-
-        setDataSet(datasets);
+        const hplc_data:EquipmentPerformance  = await loadHplcPerformance();
+        setHplcPerformance(hplc_data);
+        const control_data:ControlCharts  = await loadControlCharts();
+        setControlCharts(control_data);
       };
       fetchData();
   }, []);
-
-  // Equipment performance analysis with validation
-  const equipmentPerformance = useMemo(() => {
-    const equipmentStats = data.reduce(
-      (acc, d) => {
-        const equipmentId = d?.equipmentId || "Unknown"
-
-        if (!acc[equipmentId]) {
-          acc[equipmentId] = {
-            incidents: 0,
-            ages: [],
-            pressures: [],
-            rsds: [],
-            count: 0,
-          }
-        }
-
-        acc[equipmentId].incidents += 1
-        acc[equipmentId].count += 1
-
-        if (d?.equipmentAge) acc[equipmentId].ages.push(validateNumber(d.equipmentAge))
-        if (d?.hplcPressure) acc[equipmentId].pressures.push(validateNumber(d.hplcPressure))
-        if (d?.standardsRSD) acc[equipmentId].rsds.push(validateNumber(d.standardsRSD))
-
-        return acc
-      },
-      {} as Record<
-        string,
-        {
-          incidents: number
-          ages: number[]
-          pressures: number[]
-          rsds: number[]
-          count: number
-        }
-      >,
-    )
-
-    return Object.entries(equipmentStats).map(([id, stats]) => ({
-      equipmentId: id,
-      incidents: stats.incidents,
-      avgAge: formatNumber(safeAverage(stats.ages), 1),
-      avgPressure: formatNumber(safeAverage(stats.pressures), 1),
-      avgRSD: formatNumber(safeAverage(stats.rsds), 2),
-      riskLevel: stats.incidents > 5 ? "high" : stats.incidents > 2 ? "medium" : "low",
-    }))
-  }, [data])
-
-  // Control chart data for HPLC pressure
-  const controlChartData = useMemo(() => {
-    // Sort data by date
-    const sortedData = [...data].sort((a, b) => {
-      const dateA = a?.dateOccurrence instanceof Date ? a.dateOccurrence : new Date(a?.dateOccurrence || 0)
-      const dateB = b?.dateOccurrence instanceof Date ? b.dateOccurrence : new Date(b?.dateOccurrence || 0)
-      return dateA.getTime() - dateB.getTime()
-    })
-
-    // Get last 30 records for control chart
-    const recentData = sortedData.slice(-30)
-
-    // Calculate control limits
-    const pressures = recentData.map((d) => validateNumber(d?.hplcPressure))
-    const avgPressure = safeAverage(pressures)
-    const stdDev =
-      Math.sqrt(pressures.reduce((sum, p) => sum + Math.pow(p - avgPressure, 2), 0) / pressures.length) || 1 // Prevent NaN
-
-    const ucl = avgPressure + 3 * stdDev
-    const lcl = Math.max(0, avgPressure - 3 * stdDev) // Prevent negative LCL
-
-    return {
-      labels: recentData.map((d, i) => `Sample ${i + 1}`),
-      pressures,
-      centerLine: Array(recentData.length).fill(avgPressure),
-      ucl: Array(recentData.length).fill(ucl),
-      lcl: Array(recentData.length).fill(lcl),
-    }
-  }, [data])
 
   // Environmental impact data
   const environmentalData = useMemo(() => {
@@ -268,12 +225,12 @@ export function LabAnalystStatsDashboard({ data }: LabAnalystStatsDashboardProps
                             <CardContent className="h-[300px]">
                                 <ChartErrorBoundary>
                                     <LineChart
-                                        labels={controlChartData.labels}
+                                        labels={controlCharts.labels}
                                         datasets={[
-                                            { label: "Pressure (bar)", data: controlChartData.pressures },
-                                            { label: "Center Line", data: controlChartData.centerLine },
-                                            { label: "UCL", data: controlChartData.ucl },
-                                            { label: "LCL", data: controlChartData.lcl },
+                                            { label: "Pressure (bar)", data: controlCharts.pressures },
+                                            { label: "Center Line", data: controlCharts.centerLine },
+                                            { label: "UCL", data: controlCharts.ucl },
+                                            { label: "LCL", data: controlCharts.lcl },
                                         ]}
                                         title="HPLC Pressure Control Chart"
                                         yAxisTitle="Pressure (bar)"
@@ -319,10 +276,10 @@ export function LabAnalystStatsDashboard({ data }: LabAnalystStatsDashboardProps
                                 <div className="h-[300px]">
                                     <ChartErrorBoundary>
                                         <BarChart
-                                            labels={equipmentPerformance.slice(0, 10).map((e) => e.equipmentId)}
+                                            labels={hplcPerformance.slice(0, 10).map((e) => e.equipmentId)}
                                             datasets={[
-                                                { label: "Incidents", data: equipmentPerformance.slice(0, 10).map((e) => e.incidents) },
-                                                { label: "Avg RSD (%)", data: equipmentPerformance.slice(0, 10).map((e) => Number(e.avgRSD)) },
+                                                { label: "Incidents", data: hplcPerformance.slice(0, 10).map((e) => e.incidents) },
+                                                { label: "Avg RSD (%)", data: hplcPerformance.slice(0, 10).map((e) => Number(e.avgRSD)) },
                                             ]}
                                             title="Equipment Performance"
                                             yAxisTitle="Count / Value"
@@ -331,7 +288,7 @@ export function LabAnalystStatsDashboard({ data }: LabAnalystStatsDashboardProps
                                     </ChartErrorBoundary>
                                 </div>
                                 <div className="space-y-3 overflow-auto max-h-[300px]">
-                                    {equipmentPerformance.map((equipment, index) => (
+                                    {hplcPerformance.map((equipment, index) => (
                                         <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded">
                                             <div className="flex items-center gap-3">
                                                 <span className="text-sm font-medium">{equipment.equipmentId}</span>

@@ -12,9 +12,10 @@ import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { useToast } from "@/hooks/use-toast"
 import { Loader2, Package, Calendar, Clock, CheckCircle, AlertCircle } from "lucide-react"
-import { getFabricationProcesses, saveFabricationData } from "@/lib/firebase/firestore"
+import { getFabricationProcesses } from "@/lib/firebase/firestore"
 import Image from "next/image"
 import { useFirebase } from "@/lib/firebase/firebase-provider"
+import { saveFabricationData } from "./server"
 
 interface FabricationProcess {
   id: string

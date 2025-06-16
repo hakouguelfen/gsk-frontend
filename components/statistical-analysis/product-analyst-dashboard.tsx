@@ -7,7 +7,7 @@ interface ProductionAnalystDashboardProps {
   data: any[]
 }
 
-export function ProductionAnalystDashboard({ data }: ProductionAnalystDashboardProps) {
+export function ProductionAnalystStatsDashboard({ data }: ProductionAnalystDashboardProps) {
   const [selectedProduct, setSelectedProduct] = useState("all")
   const [selectedLot, setSelectedLot] = useState("all")
 
@@ -199,8 +199,8 @@ export function ProductionAnalystDashboard({ data }: ProductionAnalystDashboardP
   }, [data])
 
   return (
-    <div className="space-y-6">
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-      </div>
+      <div className="space-y-6">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          </div>
       </div>
 )}

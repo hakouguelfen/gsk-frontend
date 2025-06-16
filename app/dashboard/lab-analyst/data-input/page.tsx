@@ -15,7 +15,8 @@ import { PermissionGuard } from "@/components/permission-guard"
 import { Badge } from "@/components/ui/badge"
 import { CalendarDays, Package, Clock, CheckCircle, XCircle } from "lucide-react"
 import Image from "next/image"
-import { getFabricationProcesses, saveLabAnalysisData } from "@/lib/firebase/firestore"
+import { getFabricationProcesses } from "@/lib/firebase/firestore"
+import { saveLabAnalysisData } from "./server"
 
 // Define form schema for lab analyst data
 const formSchema = z.object({

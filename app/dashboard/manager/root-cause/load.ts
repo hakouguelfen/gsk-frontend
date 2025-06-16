@@ -1,6 +1,6 @@
 import { PredictionResult } from "@/components/ai-analysis-modal";
 import { getFirestoreInstance } from "@/lib/firebase/firestore";
-import { collection, getDocs, query } from "firebase/firestore";
+import { collection, getDocs, limit, query, where } from "firebase/firestore";
 
 const extract_evidence = (outOfRangeValues: Record<string, any>): Array<string> => {
   const result = Object.entries(outOfRangeValues).map(([key, obj]) =>
@@ -22,7 +22,7 @@ export const predictRootCause = async (batchNumber: any) => {
 
     return {
       batchNumber: batchNumber,
-      product: null,
+      product: prediction["product"],
       rootCause: prediction["root cause"],
       confidence: prediction["accuracy"],
       evidence: extract_evidence(prediction["out_of_range"]),
@@ -56,3 +56,19 @@ export const loadPredictions = async (): Promise<PredictionResult[]> => {
   }
 }
 
+
+export const findPrediction = async (batchNumber: string): Promise<PredictionResult|null> => {
+  try {
+    const db = getFirestoreInstance()
+    const q = query(collection(db, "predictions"), where("batchNumber", "==", batchNumber), limit(1));
+    const querySnapshot = await getDocs(q)
+
+    const doc = querySnapshot.docs[0]
+    return {
+      ...doc.data(),
+    } as PredictionResult
+  } catch (error) {
+    console.error("Error getting model feedback:", error)
+    return null;
+  }
+}

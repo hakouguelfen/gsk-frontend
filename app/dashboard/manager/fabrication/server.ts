@@ -1,12 +1,13 @@
 import { getFirestoreInstance, ROLES, sendNotification } from "@/lib/firebase/firestore"
 import { addDoc, collection, getDocs, query, where } from "firebase/firestore"
 
-interface FabricationProcess {
+export interface FabricationProcess {
     id?: string
     batchNumber: string
     dateTime: string
     product_name: string
     product_type: string
+    isTested: boolean
     isAnalyzed: boolean
     isFabricated: boolean
     createdAt: Date
@@ -46,3 +47,4 @@ export const addFabricationProcess = async (data: Omit<FabricationProcess, "id" 
         throw error
     }
 }
+
