@@ -1,18 +1,30 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Button } from "@/components/ui/button"
-import { ManagerDashboard } from "@/components/statistical-analysis/manager-dashboard"
-import { LabAnalystStatsDashboard } from "@/components/statistical-analysis/lab-analyst-dashboard"
-import { ProductionAnalystDashboard } from "@/components/statistical-analysis/product-analyst-dashboard"
-import { PermissionGuard } from "@/components/permission-guard"
+import { useEffect, useState } from "react";
+import { PermissionGuard } from "@/components/permission-guard";
+import { LabAnalystStatsDashboard } from "@/components/statistical-analysis/lab-analyst-dashboard";
+import { ManagerDashboard } from "@/components/statistical-analysis/manager-dashboard";
+import { ProductionAnalystStatsDashboard } from "@/components/statistical-analysis/product-analyst-dashboard";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 // Mock data generator
 const generateMockData = (count = 100) => {
-  const products = ["Amoxicillin 500mg", "Clavulanate 125mg", "Augmentin 1g"]
+  const products = ["Amoxicillin 500mg", "Clavulanate 125mg", "Augmentin 1g"];
   const rootCauses = [
     "Equipment calibration drift",
     "Environmental conditions",
@@ -20,13 +32,21 @@ const generateMockData = (count = 100) => {
     "Operator error",
     "Method precision",
     "Sample preparation",
-  ]
+  ];
 
   return Array.from({ length: count }, (_, i) => ({
     recordId: `REC-${String(i + 1).padStart(4, "0")}`,
-    dateOccurrence: new Date(2024, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1),
+    dateOccurrence: new Date(
+      2024,
+      Math.floor(Math.random() * 12),
+      Math.floor(Math.random() * 28) + 1,
+    ),
     timeOccurrence: `${Math.floor(Math.random() * 24)}:${Math.floor(Math.random() * 60)}`,
-    investigationCloseDate: new Date(2024, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1),
+    investigationCloseDate: new Date(
+      2024,
+      Math.floor(Math.random() * 12),
+      Math.floor(Math.random() * 28) + 1,
+    ),
     leadTime: Math.floor(Math.random() * 30) + 1,
     controlledProduct: products[Math.floor(Math.random() * products.length)],
     productType: `Type-${Math.floor(Math.random() * 3) + 1}`,
@@ -55,52 +75,63 @@ const generateMockData = (count = 100) => {
     classification: Math.random() > 0.5 ? "Major" : "Minor",
     capaRequired: Math.random() > 0.6,
     capa: `CAPA-${String(i + 1).padStart(4, "0")}`,
-  }))
-}
+  }));
+};
 
 export default function StatisticalAnalysisHub() {
-  const [data, setData] = useState<any[]>([])
-  const [dateRange, setDateRange] = useState("last-30-days")
-  const [selectedProduct, setSelectedProduct] = useState("all")
-  const [isLoading, setIsLoading] = useState(true)
+  const [data, setData] = useState<any[]>([]);
+  const [dateRange, setDateRange] = useState("last-30-days");
+  const [selectedProduct, setSelectedProduct] = useState("all");
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const mockData = generateMockData()
-    setData(mockData)
-    setIsLoading(false)
-  }, [])
+    const mockData = generateMockData();
+    setData(mockData);
+    setIsLoading(false);
+  }, []);
 
   useEffect(() => {
     // Apply filters
-    let filtered = data
+    let filtered = data;
 
     if (selectedProduct !== "all") {
-      filtered = filtered.filter((d) => d.controlledProduct === selectedProduct)
+      filtered = filtered.filter(
+        (d) => d.controlledProduct === selectedProduct,
+      );
     }
 
     // Apply date range filter
-    const now = new Date()
+    const now = new Date();
     const daysAgo =
-      dateRange === "last-7-days" ? 7 : dateRange === "last-30-days" ? 30 : dateRange === "last-90-days" ? 90 : 365
+      dateRange === "last-7-days"
+        ? 7
+        : dateRange === "last-30-days"
+          ? 30
+          : dateRange === "last-90-days"
+            ? 90
+            : 365;
 
-    const cutoffDate = new Date(now.getTime() - daysAgo * 24 * 60 * 60 * 1000)
-    filtered = filtered.filter((d) => d.dateOccurrence >= cutoffDate)
-  }, [data, dateRange, selectedProduct])
+    const cutoffDate = new Date(now.getTime() - daysAgo * 24 * 60 * 60 * 1000);
+    filtered = filtered.filter((d) => d.dateOccurrence >= cutoffDate);
+  }, [data, dateRange, selectedProduct]);
 
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <p className="text-muted-foreground">Loading statistical analysis...</p>
       </div>
-    )
+    );
   }
 
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold tracking-tight">Statistical Analysis Hub</h2>
+        <h2 className="text-2xl font-bold tracking-tight">
+          Statistical Analysis Hub
+        </h2>
         <p className="text-muted-foreground">
-          Comprehensive statistical analysis tailored for different roles in quality control
+          Comprehensive statistical analysis tailored for different roles in
+          quality control
         </p>
       </div>
 
@@ -129,8 +160,12 @@ export default function StatisticalAnalysisHub() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Products</SelectItem>
-              <SelectItem value="Amoxicillin 500mg">Amoxicillin 500mg</SelectItem>
-              <SelectItem value="Clavulanate 125mg">Clavulanate 125mg</SelectItem>
+              <SelectItem value="Amoxicillin 500mg">
+                Amoxicillin 500mg
+              </SelectItem>
+              <SelectItem value="Clavulanate 125mg">
+                Clavulanate 125mg
+              </SelectItem>
               <SelectItem value="Augmentin 1g">Augmentin 1g</SelectItem>
             </SelectContent>
           </Select>
@@ -144,13 +179,15 @@ export default function StatisticalAnalysisHub() {
         <TabsList>
           <TabsTrigger value="manager">Manager View</TabsTrigger>
           <TabsTrigger value="lab-analyst">Lab Analyst View</TabsTrigger>
-          <TabsTrigger value="production-analyst">Production Analyst View</TabsTrigger>
+          <TabsTrigger value="production-analyst">
+            Production Analyst View
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="manager">
-                  {/* <PermissionGuard permission="statistics:read"> */}
-            <ManagerDashboard data={data} dateRange={dateRange} />
-                  {/* </PermissionGuard> */}
+          {/* <PermissionGuard permission="statistics:read"> */}
+          <ManagerDashboard data={data} dateRange={dateRange} />
+          {/* </PermissionGuard> */}
         </TabsContent>
 
         <TabsContent value="lab-analyst">
@@ -161,10 +198,10 @@ export default function StatisticalAnalysisHub() {
 
         <TabsContent value="production-analyst">
           <PermissionGuard permission="production-data:read">
-            <ProductionAnalystDashboard data={data} />
+            <ProductionAnalystStatsDashboard data={data} />
           </PermissionGuard>
         </TabsContent>
       </Tabs>
     </div>
-  )
+  );
 }

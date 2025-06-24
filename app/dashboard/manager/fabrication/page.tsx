@@ -524,10 +524,6 @@ export default function FabricationPage() {
                                 <Clock className="h-4 w-4" />
                                 {new Date(process.dateTime).toLocaleString()}
                               </div>
-                              <div className="flex items-center gap-1">
-                                <Package className="h-4 w-4" />
-                                Created: {process.dateTime}
-                              </div>
                             </div>
                           </div>
                         </div>

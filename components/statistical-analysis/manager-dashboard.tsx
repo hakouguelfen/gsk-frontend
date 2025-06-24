@@ -240,7 +240,7 @@ export function ManagerDashboard({ data, dateRange }: ManagerDashboardProps) {
           <Card>
             <CardHeader>
               <CardTitle>Quality Performance Trends</CardTitle>
-              <CardDescription>Monthly OOS/OOT rates and investigation lead times</CardDescription>
+              <CardDescription>Monthly OOS rates and investigation lead times</CardDescription>
             </CardHeader>
             <CardContent className="h-[400px]">
                 { qualityTrends && (

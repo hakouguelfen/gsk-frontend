@@ -16,16 +16,7 @@ import { getFabricationProcesses } from "@/lib/firebase/firestore"
 import Image from "next/image"
 import { useFirebase } from "@/lib/firebase/firebase-provider"
 import { saveFabricationData } from "./server"
-
-interface FabricationProcess {
-  id: string
-  batchNumber: string
-  product_name: string
-  product_type: string
-  dateTime: string
-  isFabricated: boolean
-  isAnalyzed: boolean
-}
+import { FabricationProcess } from "../../manager/fabrication/server"
 
 interface FormData {
   batchId: string
@@ -231,7 +222,12 @@ export default function ProductionDataInputPage() {
                   <SelectContent>
                     {fabricationProcesses.map((process) => (
                       <SelectItem key={process.id} value={process.batchNumber}>
-                        {`${process.batchNumber} - ${process.product_name}`}
+                        {`${process.batchNumber} - ${process.product_name} `}
+                        {process.isFabricated && (
+                          <Badge variant={"default" }>
+                            Fabricated
+                          </Badge>
+                        )}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -448,7 +444,7 @@ export default function ProductionDataInputPage() {
                     </div>
 
                     <div className="flex justify-between items-center">
-                      <span className="font-medium text-gray-700">Analysis Status:</span>
+                      <span className="font-medium text-gray-700">Lab Testing Status:</span>
                       <Badge variant={selectedProcess.isAnalyzed ? "default" : "secondary"}>
                         {selectedProcess.isAnalyzed ? (
                           <>

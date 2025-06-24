@@ -1,41 +1,47 @@
-"use client"
+"use client";
 
-import { type ReactNode, useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
-import { useFirebase } from "@/lib/firebase/firebase-provider"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { Button } from "@/components/ui/button"
-import { AlertTriangle } from "lucide-react"
+import { AlertTriangle } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { type ReactNode, useEffect, useState } from "react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { useFirebase } from "@/lib/firebase/firebase-provider";
 
 interface PermissionGuardProps {
-  permission: string
-  children: ReactNode
-  fallback?: ReactNode
+  permission: string;
+  children: ReactNode;
+  fallback?: ReactNode;
 }
 
-export function PermissionGuard({ permission, children, fallback }: PermissionGuardProps) {
-  const { user, hasPermission, loading } = useFirebase()
-  const router = useRouter()
-  const [checked, setChecked] = useState(false)
+export function PermissionGuard({
+  permission,
+  children,
+  fallback,
+}: PermissionGuardProps) {
+  const { user, hasPermission, loading } = useFirebase();
+  const router = useRouter();
+  const [checked, setChecked] = useState(false);
 
   useEffect(() => {
     if (!loading) {
-      setChecked(true)
+      setChecked(true);
     }
-  }, [loading])
+  }, [loading]);
 
   if (!checked || loading) {
-    return null
+    return null;
   }
 
   if (!user) {
-    router.push("/login")
-    return null
+    router.push("/login");
+    return null;
   }
+
+  return <>{children}</>;
 
   if (!hasPermission(permission)) {
     if (fallback) {
-      return <>{fallback}</>
+      return <>{fallback}</>;
     }
 
     return (
@@ -44,15 +50,17 @@ export function PermissionGuard({ permission, children, fallback }: PermissionGu
           <Alert variant="destructive">
             <AlertTriangle className="h-4 w-4" />
             <AlertTitle>Access Denied</AlertTitle>
-            <AlertDescription>You do not have permission to access this feature.</AlertDescription>
+            <AlertDescription>
+              You do not have permission to access this feature.
+            </AlertDescription>
           </Alert>
           <div className="mt-4 flex justify-center">
             <Button onClick={() => router.back()}>Go Back</Button>
           </div>
         </div>
       </div>
-    )
+    );
   }
 
-  return <>{children}</>
+  return <>{children}</>;
 }

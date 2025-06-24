@@ -1,7 +1,7 @@
+import { ArrowRight, Beaker, ClipboardCheck, LineChart, ShieldCheck, Users } from "lucide-react"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import Link from "next/link"
-import { ArrowRight, Beaker, ClipboardCheck, LineChart, Users, ShieldCheck } from "lucide-react"
 
 export default function Home() {
   return (
