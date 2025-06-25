@@ -116,11 +116,11 @@ export function DashboardNav() {
       label: "Root Cause Analysis",
       icon: Search,
     },
-    {
-      href: "/dashboard/manager/capa",
-      label: "CAPA Prediction",
-      icon: FileText,
-    },
+    // {
+    //   href: "/dashboard/manager/capa",
+    //   label: "CAPA Prediction",
+    //   icon: FileText,
+    // },
     {
       href: "/dashboard/manager/model",
       label: "Retrain Model",

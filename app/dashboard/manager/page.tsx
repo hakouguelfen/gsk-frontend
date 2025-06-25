@@ -135,45 +135,6 @@ export default function StatisticalAnalysisHub() {
         </p>
       </div>
 
-      {/* Filters */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Analysis Filters</CardTitle>
-          <CardDescription>Customize your analysis parameters</CardDescription>
-        </CardHeader>
-        <CardContent className="flex gap-4">
-          <Select value={dateRange} onValueChange={setDateRange}>
-            <SelectTrigger className="w-[200px]">
-              <SelectValue placeholder="Select date range" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="last-7-days">Last 7 Days</SelectItem>
-              <SelectItem value="last-30-days">Last 30 Days</SelectItem>
-              <SelectItem value="last-90-days">Last 90 Days</SelectItem>
-              <SelectItem value="last-year">Last Year</SelectItem>
-            </SelectContent>
-          </Select>
-
-          <Select value={selectedProduct} onValueChange={setSelectedProduct}>
-            <SelectTrigger className="w-[200px]">
-              <SelectValue placeholder="Select product" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Products</SelectItem>
-              <SelectItem value="Amoxicillin 500mg">
-                Amoxicillin 500mg
-              </SelectItem>
-              <SelectItem value="Clavulanate 125mg">
-                Clavulanate 125mg
-              </SelectItem>
-              <SelectItem value="Augmentin 1g">Augmentin 1g</SelectItem>
-            </SelectContent>
-          </Select>
-
-          <Button variant="outline">Export Data</Button>
-        </CardContent>
-      </Card>
-
       {/* Role-based Analysis Tabs */}
       <Tabs defaultValue="manager" className="space-y-4">
         <TabsList>
